@@ -211,5 +211,3 @@ separateBy sep val = liftA2 (:) val pairs <|> pure []
 --separateBy separator value = (:) <$> value <*> many (separator *> value) <|> pure []
 
 --runParser (separateBy (char ',') (int)) "123,1234,12,5"
-
-
