@@ -1,7 +1,6 @@
 module ParserLib where
 
 import Control.Applicative
-import qualified Data.Map as Map
 import Data.Char
 
 --conceptually, the intro is the most difficult part

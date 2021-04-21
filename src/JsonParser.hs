@@ -1,13 +1,24 @@
 module JsonParser where
 
 import ParserLib
+import Control.Applicative
+
+parseFile :: FilePath -> IO (Maybe (String, JsonValue))
+parseFile path = do
+    text <- readFile path 
+    return $ runParser jsonObject text 
 
 data JsonValue = JsonNull
                 | JsonBool Bool
                 | JsonNumber Integer 
                 | JsonString String
                 | JsonArray [JsonValue]
-                | JsonObject (Map.Map String JsonValue) 
+                | JsonObject [(String, JsonValue)]
+                deriving Show
+
+--jsonValue = jsonBool <|> jsonNumber <|> jsonString <|> jsonArray <|> jsonObject
+jsonValue = zeroOrMoreSpace *> value <* zeroOrMoreSpace
+    where value = choice [jsonNull, jsonBool, jsonNumber, jsonString, jsonArray, jsonObject]
 
 -- jsonNull = fmap (\_ -> JsonNull) (string "null")
 jsonNull = JsonNull <$ string "null"
@@ -21,22 +32,23 @@ jsonBool = (JsonBool True <$ string "true") <|> (JsonBool False <$ string "false
 jsonNumber = JsonNumber <$> int
 
 jsonString = JsonString <$> stringLiteral
-    where
-        stringLiteral = doubleQuote *> many stringChar <* doubleQuote
-        stringChar = satisfy (/='"')
-
-
---SHOW THEM THIS
---jsonValue = jsonBool <|> jsonNumber <|> jsonString <|> jsonArray <|> jsonObject
-jsonValue = zeroOrMoreSpace *> value <* zeroOrMoreSpace
-    where value = choice [jsonBool, jsonNumber, jsonString, jsonArray]
 
 --betweenManyWhitespace parser = between manyWhitespace parser manyWhitespace
 
-jsonArray :: Parser JsonValue
-jsonArray = JsonArray <$> separateBy comma jsonValue
+jsonArray = JsonArray <$> (char '[' *> values <* char ']')
+    where 
+        values = separateBy comma jsonValue
 
+jsonObject :: Parser JsonValue
+jsonObject = JsonObject <$> (char '{' *> object <* char '}')
+    where
+        object = separateBy comma pair
+        pair = combine (name <* char ':') jsonValue
+        combine = liftA2 (,)
+        name = zeroOrMoreSpace *> stringLiteral <* zeroOrMoreSpace 
 
+stringLiteral = doubleQuote *> many stringChar <* doubleQuote
+stringChar = satisfy (/='"')
 
 doubleQuote = char '"'
 comma       = char ','
