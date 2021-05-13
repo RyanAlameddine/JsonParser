@@ -167,7 +167,7 @@ stringInGreeting str = string "hello, " *> string str <* string ", how are you?"
 instance Alternative Parser where
     empty = Parser (const Nothing)
     (Parser a) <|> (Parser b) = Parser parser
-        where 
+        where
             parser input = a input <|> b input
 
 greeting = string "hi" <|> string "hello" <|> string "greetings"
