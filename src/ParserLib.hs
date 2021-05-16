@@ -1,5 +1,6 @@
 module ParserLib where
-
+    
+--MAKE SURE TO ADD IMPORTS
 import Control.Applicative
 import Data.Char
 
@@ -21,6 +22,14 @@ import Data.Char
 --data Parser a = Parser (String -> Maybe (String, a))
 newtype Parser a = Parser (String -> Maybe (String, a))
 
+charY :: Parser Char
+charY = Parser parse
+    where
+        parse (x:xs)
+            | x == 'Y'  = Just (xs, 'Y')
+            -- otherwise = Nothing
+        parse _ = Nothing
+
 runParser :: Parser a -> String -> Maybe (String, a)
 runParser (Parser f) = f
 
@@ -33,14 +42,6 @@ runParser (Parser f) = f
         -- getName Person{name = n} = n
 
         -- newtype Parser a = Parser { runParser :: String -> Maybe (String, a) }
-
-charY :: Parser Char
-charY = Parser parse
-    where
-        parse (x:xs)
-            | x == 'Y'  = Just (xs, 'Y')
-            -- otherwise = Nothing
-        parse _ = Nothing
 
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy p = Parser parse
@@ -72,7 +73,6 @@ timesFiveMaybe :: Maybe Int -> Maybe Int
 timesFiveMaybe Nothing = Nothing
 timesFiveMaybe (Just x) = Just (x * 5)
 
-
 timesFiveList :: [Int] -> [Int]
 timesFiveList [] = []
 timesFiveList (x:xs) = (x * 5) : timesFiveList xs
@@ -91,6 +91,7 @@ maybeApply2 Nothing _ _ = Nothing
 maybeApply2 _ Nothing _ = Nothing
 maybeApply2 _ _ Nothing = Nothing
 maybeApply2 (Just f) (Just g) (Just a) = Just (g (f a))
+--maybeApply2 _ _ _ _ = Nothing
 
 pleaseStop :: (a -> Maybe b) -> (b -> Maybe c) -> Maybe a -> Maybe c
 pleaseStop _ _ Nothing  = Nothing
@@ -102,20 +103,22 @@ pleaseStop f g (Just a) = applyG (f a)
 cry :: Maybe (a -> Maybe b) -> Maybe (b -> Maybe c) -> Maybe a -> Maybe c
 
 --rewrite one in do notation
+-- maybeApply maybeF maybeVal = do
+--     f   <- maybeF
+--     val <- maybeVal
+--     Just (f val)
+
 
 cry maybeF maybeG maybeA = do
-    a <- maybeA
     f <- maybeF
+    a <- maybeA
     b <- f a
     g <- maybeG
     c <- g b
     Just c
 
 
--- maybeApply f v = do
---     func <- f
---     val  <- v
---     Just (func val)
+
 
 instance Functor Parser where
     fmap f (Parser p) = Parser parser
@@ -136,11 +139,11 @@ instance Functor Parser where
 instance Applicative Parser where
     pure v = Parser parser
         where parser xs = Just (xs, v)
-    liftA2 f x y = Parser parser
+    liftA2 f (Parser x) (Parser y) = Parser parser
         where
             parser input = do
-                (input' , v1) <- runParser x input
-                (input'', v2) <- runParser y input'
+                (input' , v1) <- x input
+                (input'', v2) <- y input'
                 Just (input'', f v1 v2)
 
     --Parser (a -> b) <*> Parser a -> Parser b
@@ -157,13 +160,15 @@ pSequenceA = foldr (liftA2 (:)) (pure [])
 string = sequenceA . map char--traverse
 
 --runParser (sequenceA [string "hello", string " ", string "the"]) "hello there"
---stringInGreeting :: String -> Parser String
+--nameInGreeting :: String -> Parser String
 
---stringInGreeting str = sequenceA [string "hello, ", string str, string ", how are you?"]
+--nameInGreeting str = sequenceA [string "hello, ", string str, string ", how are you?"]
 
---runParser (stringInGreeting "Stan") "hello, Stan, how are you?"
-stringInGreeting str = string "hello, " *> string str <* string ", how are you?"
+--runParser (nameInGreeting "Stan") "hello, Stan, how are you?"
+nameInGreeting str = string "hello, " *> string str <* string ", how are you?"
 
+
+-- Just 5 <|> Nothing, Nothing <|> Just 5, Nothing <|> Nothing 
 instance Alternative Parser where
     empty = Parser (const Nothing)
     (Parser a) <|> (Parser b) = Parser parser
