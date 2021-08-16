@@ -128,7 +128,7 @@ instance Functor Parser where
 
             parser xs = do
                 (str, val) <- p xs
-                Just (str, f val)
+                pure (str, f val)
             -- parser xs = do
             --     val <- p xs
             --     Just $ fmap f val
@@ -144,7 +144,7 @@ instance Applicative Parser where
             parser input = do
                 (input' , v1) <- x input
                 (input'', v2) <- y input'
-                Just (input'', f v1 v2)
+                pure (input'', f v1 v2)
 
     --Parser (a -> b) <*> Parser a -> Parser b
 
